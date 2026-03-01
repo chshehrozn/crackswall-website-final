@@ -4,7 +4,8 @@ import ProductCardGame from "@/components/ProductCardGame";
 import NavLink from "@/components/NavLink";
 import SetTitle from "@/components/SetTitle";
 import { getThemeData, getAllBlogsData, getBlogsByCategory, getCategoriesList, postComment, getAllCategoryBlogs } from "@/utils/apis";
-import * as fs from "fs";
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
   const theme = await getThemeData();
@@ -74,8 +75,8 @@ export default async function Home({ params }) {
       applicationCategory: software.application_category,
       offers: {
         "@type": "Offer",
-        price: software.price.split(" ")[0],
-        priceCurrency: software.price.split(" ")[1],
+        price: software.price?.split(" ")?.[0] || "",
+        priceCurrency: software.price?.split(" ")?.[1] || "",
       },
       aggregateRating: {
         "@type": "AggregateRating",
@@ -84,19 +85,17 @@ export default async function Home({ params }) {
       },
     })),
   ];
-  if (allBlogs.length < 0 || !gameCategoryBlogs?.status) {
-    fs.appendFileSync("/Users/macbook/Documents/backend-v2/frontend/test-logs/log.txt", JSON.stringify({ reason: "gameCategoryBlogs", allBlogsLength: allBlogs.length, gameStatus: gameCategoryBlogs?.status }) + "\n");
-    console.log("Failed allBlogs or gameCategoryBlogs", { allBlogsLength: allBlogs.length, gameStatus: gameCategoryBlogs?.status });
+  if (allBlogs?.length < 0 || !gameCategoryBlogs?.status) {
+    console.log("Failed allBlogs or gameCategoryBlogs", { allBlogsLength: allBlogs?.length, gameStatus: gameCategoryBlogs?.status });
     notFound();
   }
 
   if (!response?.status) {
-    fs.appendFileSync("/Users/macbook/Documents/backend-v2/frontend/test-logs/log.txt", JSON.stringify({ reason: "response", responseStatus: response?.status }) + "\n");
     console.log("Failed response (license check)", { responseStatus: response?.status });
     notFound();
   }
 
-  if (allBlogs.length && gameCategoryBlogs?.status) {
+  if (allBlogs?.length && gameCategoryBlogs?.status) {
     return (
       <>
         <SetTitle title={""} />

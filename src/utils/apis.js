@@ -15,14 +15,14 @@ export const applyTranslations = async (data, tableName, locale, id = null) => {
 
     if (id) {
       // Priority Sync for a specific ID always goes to the server
-      const cmsUrl = process.env.NEXT_PUBLIC_CMS_URL || 'http://localhost:3002';
+      const cmsUrl = getBaseUrl();
       const res = await axios.get(`${cmsUrl}/api/public/translations?locale=${locale}&table=${tableName}&id=${id}`);
       translations = res?.data?.data || [];
     } else {
       // Table-wide sync uses a pooled promise to avoid redundant "waterfall" requests
       const cacheKey = `${locale}_${tableName}`;
       if (!translationPromises.has(cacheKey)) {
-        const cmsUrl = process.env.NEXT_PUBLIC_CMS_URL || 'http://localhost:3002';
+        const cmsUrl = getBaseUrl();
         translationPromises.set(cacheKey,
           axios.get(`${cmsUrl}/api/public/translations?locale=${locale}`)
             .then(res => res?.data?.data || [])
@@ -65,13 +65,21 @@ const apply = (data, tableName, translations) => {
 
 // Helper to get Base URL from Cookie (Magic Link) or Env
 const getBaseUrl = () => {
-  let url = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000';
+  let url = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000') : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000');
 
   if (typeof window !== 'undefined') {
     // Client-side
     const cookies = document.cookie.split('; ');
     const urlCookie = cookies.find(row => row.startsWith('cms_api_url='));
     if (urlCookie) url = decodeURIComponent(urlCookie.split('=')[1]);
+  } else {
+    // Server-side (Standard next.js cookies() is better but this works too for read-only)
+    try {
+      const { cookies } = require('next/headers');
+      const cookieStore = cookies();
+      const urlCookie = cookieStore.get('cms_api_url');
+      if (urlCookie) url = urlCookie.value;
+    } catch (e) { }
   }
 
   // Normalize: remove trailing slash and trailing /api (since code appends it)

@@ -8,8 +8,11 @@ export async function POST(request) {
             return NextResponse.json({ success: false, error: 'Missing API URL' }, { status: 400 });
         }
 
+        // Normalize URL: remove trailing slash and trailing /api
+        const normalizedUrl = apiUrl.trim().replace(/\/$/, '').replace(/\/api$/, '');
+
         // Verify the backend is alive
-        const verifyRes = await fetch(`${apiUrl}/categories`);
+        const verifyRes = await fetch(`${normalizedUrl}/api/categories`);
         if (!verifyRes.ok) {
             return NextResponse.json({ success: false, error: 'Invalid Backend URL or Backend Offline' }, { status: 401 });
         }
@@ -23,7 +26,7 @@ export async function POST(request) {
             sameSite: 'lax',
         };
 
-        response.cookies.set('cms_api_url', apiUrl, cookieOptions);
+        response.cookies.set('cms_api_url', normalizedUrl, cookieOptions);
 
         return response;
     } catch (err) {
